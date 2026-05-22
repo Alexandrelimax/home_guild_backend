@@ -47,11 +47,6 @@ class GamificationService:
         if not quest or quest.status != "analyzing":
             return None
 
-        # --- TRAVA DE SEGURANÇA (COMENTADA PARA TESTES) ---
-        # if quest.user_id == reviewer_id:
-        #     return None # Impede que o usuário aprove a própria quest
-        # --------------------------------------------------
-
         user = self.user_repo.get_by_id(quest.user_id)
         old_level = user.level
         logs = []
