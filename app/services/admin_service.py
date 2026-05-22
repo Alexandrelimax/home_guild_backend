@@ -12,6 +12,7 @@ from app.models.schema import (
 from app.repositories.user_repository import UserRepository
 from app.repositories.quest_repository import QuestRepository
 from app.repositories.badge_repository import BadgeRepository
+from app.repositories.log_repository import LogRepository
 
 
 class AdminService:
@@ -19,6 +20,7 @@ class AdminService:
         self.user_repo = UserRepository(session)
         self.quest_repo = QuestRepository(session)
         self.badge_repo = BadgeRepository(session)
+        self.log_repo = LogRepository(session)
 
     def get_analytics(self) -> AdminAnalyticsResponse:
         players = self.user_repo.get_all_players()
@@ -133,5 +135,11 @@ class AdminService:
                     is_recurring=is_recurring,
                     event_badge_id=event_badge_id,
                 ))
+                if event_badge_id is not None:
+                    self.log_repo.create_log(
+                        user_id=uid,
+                        message=f"⚡ Novo Evento: {title}!",
+                        log_type="event_assigned",
+                    )
                 count += 1
         return count

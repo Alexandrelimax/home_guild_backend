@@ -48,3 +48,12 @@ class QuestRepository(BaseRepository[Quest]):
             .where(Quest.is_recurring == True, Quest.status == "pending")
         )
         return set(self.session.exec(statement).all())
+
+    def get_event_quests_by_user(self, user_id: int) -> list[Quest]:
+        statement = (
+            select(Quest)
+            .where(Quest.user_id == user_id)
+            .where(Quest.event_badge_id.is_not(None))
+            .order_by(Quest.updated_at.desc())
+        )
+        return self.session.exec(statement).all()
