@@ -1,6 +1,6 @@
 from fastapi import APIRouter, Depends, HTTPException
 from sqlmodel import Session
-from typing import List
+from typing import List, Literal
 
 from app.config.database import get_session
 from app.config.get_token import get_current_user
@@ -190,8 +190,8 @@ def get_analyzing_quests(
 
 @router_admin.post("/quests/{quest_id}/status", response_model=QuestReviewResponse)
 def review_quest(
-    quest_id: int, 
-    status: str, 
+    quest_id: int,
+    status: Literal["approved", "rejected"],
     current_admin: User = Depends(require_admin),
     session: Session = Depends(get_session)
 ):

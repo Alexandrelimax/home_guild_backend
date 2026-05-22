@@ -9,6 +9,7 @@ from app.routes.auth_route import router_auth
 from app.routes.admin_route import router_admin
 
 from app.config.database import init_db
+from app.config.settings import settings
 from contextlib import asynccontextmanager
 
 @asynccontextmanager
@@ -22,7 +23,7 @@ app = FastAPI(title="Gamification API", lifespan=lifespan)
 # Configuração de CORS para o seu Angular (Porta 4200)
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://localhost:4200"],
+    allow_origins=settings.CORS_ORIGINS,
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
