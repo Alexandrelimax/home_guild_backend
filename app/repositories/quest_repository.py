@@ -1,4 +1,5 @@
-from sqlmodel import Session, select, func
+from collections import defaultdict
+from sqlmodel import Session, select, func, col
 from app.repositories.base_repository import BaseRepository
 from app.models.entities import Quest
 
@@ -13,16 +14,24 @@ class QuestRepository(BaseRepository[Quest]):
         return self.session.exec(statement).all()
 
     def get_analyzing_quests(self):
-        statement = select(Quest).where(Quest.status == "analyzing")
-        return self.session.exec(statement).all()
+        return self.session.exec(select(Quest).where(Quest.status == "analyzing")).all()
 
     def get_quests_count_by_status(self, status: str) -> int:
         statement = select(func.count()).select_from(Quest).where(Quest.status == status)
         return self.session.exec(statement).one()
 
     def get_total_quests_count(self) -> int:
-        statement = select(func.count()).select_from(Quest)
-        return self.session.exec(statement).one()
+        return self.session.exec(select(func.count()).select_from(Quest)).one()
+
+    def get_quest_counts_by_user(self, user_ids: list[int]) -> dict[tuple[int, str], int]:
+        """Retorna {(user_id, status): count} para os status 'approved' e 'pending'."""
+        statement = (
+            select(Quest.user_id, Quest.status, func.count())
+            .where(col(Quest.user_id).in_(user_ids))
+            .where(col(Quest.status).in_(["approved", "pending"]))
+            .group_by(Quest.user_id, Quest.status)
+        )
+        return {(uid, status): count for uid, status, count in self.session.exec(statement).all()}
 
     def get_recurring_templates(self):
         statement = (
@@ -32,10 +41,10 @@ class QuestRepository(BaseRepository[Quest]):
         )
         return self.session.exec(statement).all()
 
-    def has_pending(self, user_id: int, title: str) -> bool:
-        statement = select(Quest).where(
-            Quest.user_id == user_id,
-            Quest.title == title,
-            Quest.status == "pending",
+    def get_pending_recurring_pairs(self) -> set[tuple[int, str]]:
+        """Retorna pares (user_id, title) de quests recorrentes já pendentes."""
+        statement = (
+            select(Quest.user_id, Quest.title)
+            .where(Quest.is_recurring == True, Quest.status == "pending")
         )
-        return self.session.exec(statement).first() is not None
+        return set(self.session.exec(statement).all())
