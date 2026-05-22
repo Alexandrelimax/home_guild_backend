@@ -72,7 +72,7 @@ class GamificationService:
                 badge = self.badge_repo.get_by_id(quest.event_badge_id)
                 if badge and badge not in user.badges:
                     user.badges.append(badge)
-                    logs.append(self.log_repo.create_log(user.id, f"🏆 Conquista Desbloqueada: {badge.title}!", "info"))
+                    logs.append(self.log_repo.create_log(user.id, f"🏆 Conquista Desbloqueada: {badge.title}!", "badge_unlocked"))
 
             msg, log_type = f"Quest '{quest.title}' aprovada!", "approved"
 

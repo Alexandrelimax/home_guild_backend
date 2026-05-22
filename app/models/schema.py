@@ -72,6 +72,18 @@ class QuestDTO(BaseModel):
 
     model_config = base_config
 
+class EventQuestDTO(BaseModel):
+    id: int
+    title: str
+    description: Optional[str] = None
+    xp: int
+    bits: int
+    status: str
+    badge: BadgeDTO
+    updated_at: Optional[datetime] = None
+
+    model_config = base_config
+
 class QuestWithUserDTO(BaseModel):
     quest: QuestDTO
     user: UserDTO
