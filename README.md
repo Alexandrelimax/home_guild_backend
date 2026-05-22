@@ -159,15 +159,15 @@ flowchart TD
 
 ```mermaid
 flowchart TD
-    A[Admin rejeita quest] --> B[XP -= metade do XP da quest]
-    B --> C{XP < 0 e nível > 1?}
-    C -- Sim --> D[Level Down]
-    D --> E[XP += 1000]
-    E --> C
-    C -- Não --> F{Nível == 1 e XP < 0?}
-    F -- Sim --> G[XP travado em 0]
-    F -- Não --> H[Fim]
-    Quest status --> pending
+    A[Admin rejeita quest] --> B[Quest volta para pending]
+    B --> C[XP -= metade do XP da quest]
+    C --> D{XP ficou negativo e nível > 1?}
+    D -- Sim --> E[Level Down]
+    E --> F[XP += 1000]
+    F --> D
+    D -- Não --> G{Nível == 1 e XP ainda negativo?}
+    G -- Sim --> H[XP travado em 0]
+    G -- Não --> I[Fim]
 ```
 
 ---
