@@ -22,11 +22,16 @@ class AdminService:
 
     def get_analytics(self) -> AdminAnalyticsResponse:
         players = self.user_repo.get_all_players()
+        player_ids = [p.id for p in players]
+
+        # 1 query para todos os counts, em vez de 2 por player
+        counts = self.quest_repo.get_quest_counts_by_user(player_ids)
+
         users_metrics = [
             UserMetricsDTO(
                 user=UserDTO.model_validate(p),
-                total_completed=len(self.quest_repo.get_user_quests(p.id, status="approved")),
-                active_quests=len(self.quest_repo.get_user_quests(p.id, status="pending")),
+                total_completed=counts.get((p.id, "approved"), 0),
+                active_quests=counts.get((p.id, "pending"), 0),
             )
             for p in players
         ]
@@ -40,15 +45,19 @@ class AdminService:
 
     def get_analyzing_quests(self) -> list[QuestWithUserDTO]:
         quests = self.quest_repo.get_analyzing_quests()
-        result = []
-        for q in quests:
-            player = self.user_repo.get_by_id(q.user_id)
-            if player:
-                result.append(QuestWithUserDTO(
-                    quest=QuestDTO.model_validate(q),
-                    user=UserDTO.model_validate(player),
-                ))
-        return result
+        if not quests:
+            return []
+
+        # 1 query para todos os users, em vez de 1 por quest
+        users = self.user_repo.get_by_ids(list({q.user_id for q in quests}))
+        return [
+            QuestWithUserDTO(
+                quest=QuestDTO.model_validate(q),
+                user=UserDTO.model_validate(users[q.user_id]),
+            )
+            for q in quests
+            if q.user_id in users
+        ]
 
     def create_quests(self, data: QuestCreateRequest) -> int:
         return self._distribute_quests(
@@ -81,9 +90,14 @@ class AdminService:
 
     def reset_daily_quests(self) -> int:
         templates = self.quest_repo.get_recurring_templates()
+        if not templates:
+            return 0
+
+        # 1 query para todos os pares já pendentes, em vez de 1 por template
+        existing_pending = self.quest_repo.get_pending_recurring_pairs()
         count = 0
         for title, desc, xp, bits, uid in templates:
-            if not self.quest_repo.has_pending(uid, title):
+            if (uid, title) not in existing_pending:
                 self.quest_repo.save(Quest(
                     title=title,
                     description=desc,
