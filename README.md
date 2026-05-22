@@ -133,67 +133,44 @@ stateDiagram-v2
 
 ### 3. Fluxo de Aprovação e Gamificação
 
-Quando o admin aprova uma quest, o motor de gamificação calcula XP, nível e verifica se um badge de evento deve ser concedido.
-
 ```mermaid
-flowchart TD
-    A[Admin aprova quest] --> B[+Bits ao player]
-    B --> C{Player está no nível máximo?\nnível 15}
-    C -- Sim --> D[XP não é adicionado]
-    C -- Não --> E[+XP ao player]
-    E --> F{XP acumulado >= 1000?}
-    F -- Não --> G[Mantém nível atual]
-    F -- Sim --> H[Level Up!]
-    H --> I[XP -= 1000]
-    I --> J{Atingiu nível 15?}
-    J -- Sim --> K[Nível máximo travado\nXP zerado]
-    J -- Não --> F
-    B --> L{Quest tem badge de evento?}
-    L -- Sim --> M{Player já tem o badge?}
-    M -- Não --> N[Badge concedido]
-    M -- Sim --> O[Ignorado]
-    L -- Não --> O
+flowchart LR
+    A([Admin aprova]) --> B[+Bits e +XP]
+    B --> C{XP >= 1000?}
+    C -- Sim --> D[Level Up]
+    C -- Não --> E([Fim])
+    D --> E
+
+    A2([Admin rejeita]) --> F[Quest volta a pending]
+    F --> G[XP -= 50% da quest]
+    G --> H{XP negativo?}
+    H -- Sim --> I[Level Down]
+    H -- Não --> J([Fim])
+    I --> J
 ```
 
-**Rejeição** penaliza o player com metade do XP da quest. Se o XP ficar negativo, o player faz downgrade de nível (cada nível perdido restaura 1000 XP).
-
-```mermaid
-flowchart TD
-    A[Admin rejeita quest] --> B[Quest volta para pending]
-    B --> C[XP -= metade do XP da quest]
-    C --> D{XP ficou negativo e nível > 1?}
-    D -- Sim --> E[Level Down]
-    E --> F[XP += 1000]
-    F --> D
-    D -- Não --> G{Nível == 1 e XP ainda negativo?}
-    G -- Sim --> H[XP travado em 0]
-    G -- Não --> I[Fim]
-```
+> Nível máximo: **15**. Ao atingi-lo, XP para de acumular. No nível mínimo **1**, XP nunca fica negativo. Quests de evento concedem um badge ao player quando aprovadas.
 
 ---
 
 ### 4. Loja de Recompensas
 
-Existem dois tipos de recompensa, com mecânicas distintas:
+Dois tipos de reward com moedas diferentes:
 
 ```mermaid
-flowchart TD
-    A[Player tenta resgatar reward] --> B{Tipo da reward}
-
-    B -- bits --> C{Bits do player >= custo?}
-    C -- Não --> D[❌ Recusado]
-    C -- Sim --> E[Debita Bits do player]
-    E --> F[✅ Reward registrada]
-
-    B -- milestone --> G{Nível do player >= min_level?}
-    G -- Não --> D
-    G -- Sim --> H[Debita níveis do player\nplayer.level -= min_level]
-    H --> I{Nível ficou abaixo de 1?}
-    I -- Sim --> J[Trava em nível 1\nXP zerado]
-    I -- Não --> F
+flowchart LR
+    A([Player resgata]) --> B{Tipo}
+    B -- bits --> C{Saldo suficiente?}
+    C -- Sim --> D[Debita Bits]
+    C -- Não --> E([❌ Recusado])
+    B -- milestone --> F{Nível suficiente?}
+    F -- Sim --> G[Debita níveis]
+    F -- Não --> E
+    D --> H([✅ Registrado])
+    G --> H
 ```
 
-| Tipo | Moeda | Detalhe |
+| Tipo | Moeda | Mecânica |
 |---|---|---|
 | `bits` | Bits | Compra direta pelo saldo acumulado |
 | `milestone` | Níveis | Gasta níveis conquistados — mecânica de prestígio |
