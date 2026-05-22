@@ -16,4 +16,4 @@ def get_history(
     session: Session = Depends(get_session)
 ):
     service = GamificationService(session)
-    return service.log_repo.get_latest(current_user.id, limit=limit)
+    return service.log_repo.get_latest_by_user(current_user.id, limit=limit)
